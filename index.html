@@ -1,0 +1,152 @@
+<!--*******************************************************************************
+	Copyright(c) 2021 KEYENCE CORPORATION. All rights reserved.
+******************************************************************************* -->
+<!DOCTYPE html>
+<head>
+    <title>Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <style>
+        button, input {margin: 3px;font-size: 110%;}
+        textarea {margin: 5px;font-size: 100%; width:100%;}
+        h2 {margin: 10px; color: grey}
+    </style>
+</head>
+<body>
+    <h2>Scanner</h2>
+    <button onclick="onStartButton()">Scan Start</button>
+    <button onclick="onStopButton()">Scan Stop</button>
+    <button onclick="onSettingButton()">Setting</button>
+    <br>
+    <textarea id="result" placeholder="scan result"></textarea>
+    <br>
+    <br>
+
+    <h2>Notification</h2>
+    <button onclick="onBuzzerButton()">Buzzer</button>
+    <button onclick="onLEDButton()">LED</button>
+    <button onclick="onVibratorButton()">Vibrate</button>
+    
+    <br>
+    <br>
+    <h2>File</h2>
+    <button onclick="fileRead()">Read</button>
+    <button onclick="fileWrite()">Write</button>
+    <button onclick="deleteFileandDirectory()">Delete</button>
+    <br>
+    <textarea id="filecontents" placeholder="File contents"></textarea>
+    <br>
+    <button onclick="copyFile()">CopyFile</button>
+    <button onclick="moveFile()">MoveFile</button>
+</body>
+<script src="kjs-modules.js"></script>
+
+<script>
+
+    window.onload = function() {
+	//Set Callback Event as a Scan Event
+        KJS.Scanner.setReadCallback('resultCallback')
+    }
+
+    //Event on code scanned.
+    function resultCallback(result) {
+        document.getElementById("result").innerText = result.mStringData;
+    }
+
+    //Scan
+    function onStartButton() {
+	KJS.Scanner.startRead();
+    }
+
+    function onStopButton() {
+	KJS.Scanner.stopRead();
+    }
+
+    function onSettingButton() {
+        // Get the current parameter
+        var param = KJS.Scanner.getConfig(KJS.Scanner.ConfigId.CodeType);
+        var param_back = Object.assign({}, param);
+
+        // Code39 disabled
+        param.code39 = false;
+        var ret = KJS.Scanner.setConfig(KJS.Scanner.ConfigId.CodeType, param);
+        if (ret == 0) {
+            alert("Code39 disabled");
+        }
+
+        // Return to backup
+        param = param_back;
+	    KJS.Scanner.setConfig(KJS.Scanner.ConfigId.CodeType, param_back);
+        if (ret == 0) {
+            alert("Recovered");
+        }
+    }
+
+
+    //Notification
+    function onBuzzerButton() {
+        //startBuzzer(tone, onPeriod, offPeriod, repeatCount);
+        KJS.Notification.startBuzzer(16,100,100,2);
+    }
+
+    function onLEDButton() {
+        //startLed(color, onPeriod, offPeriod, repeatCount);
+        KJS.Notification.startLed(1,1000,0,1);
+    }
+
+    function onVibratorButton() {
+        //startVibrator(onPeriod, offPeriod, repeatCount);
+        KJS.Notification.startVibrator(1000,200,2);
+    }
+
+
+    //File Control
+    let testFileName="sample.txt";
+    let copyFileName="sample1.txt";
+    let copyDir="test";
+    function fileRead() {
+        if(KJS.File.exists(0, testFileName)){
+            let fp = KJS.File.open(0,testFileName);
+            let filecontents = KJS.File.readLine(fp);
+            document.getElementById("filecontents").value = filecontents;
+            KJS.File.close(fp);
+        } else {
+            document.getElementById("filecontents").value = "";
+        }
+    }
+    function fileWrite() {
+        let contents = document.getElementById("filecontents").value;
+        if(KJS.File.exists(0, testFileName)!= true){
+            KJS.File.createFile(0,testFileName);
+        }
+        let fp = KJS.File.open(0,testFileName);
+        if(KJS.File.write(fp,contents)){
+            document.getElementById("filecontents").value = ""
+        }
+        KJS.File.close(fp);
+    }
+    function deleteFileandDirectory(){
+        KJS.File.deleteFile(0, testFileName);
+        KJS.File.deleteDirectory(0,copyDir);
+    }
+
+    function copyFile() {
+        var ret = KJS.File.copyFile(0, testFileName, 0, copyFileName);
+	if (ret == true) {
+		alert("File copied");
+	}else{
+		alert("Failed");
+	}
+    }
+
+    function moveFile() {
+        KJS.File.createDirectory(0, copyDir);
+        var ret = KJS.File.moveFile(0, copyFileName, 0, copyDir + "/" + copyFileName);
+        if (ret == true) {
+            alert("File moved");
+        }else{
+            alert("Failed");
+        }
+    }
+
+
+</script>
